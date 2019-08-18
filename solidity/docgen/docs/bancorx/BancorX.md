@@ -1,4 +1,4 @@
-The BancorX contract allows cross chain token transfers.
+The BancorX contract allows cross chain token transfers2.
 
 ---
 
