@@ -999,6 +999,20 @@ contract BancorConverter is IBancorConverter, SmartTokenController, Managed, Con
         delay[msg.sender] = now;
     }
 
+    function setDelayPeriod(uint _period)
+        public
+        ownerOnly
+    {
+        delayPeriod = _period;
+    }
+
+    function setWindowTime(uint _time)
+        public
+        ownerOnly
+    {
+        window = _time;
+    }
+
     /**
         @dev deprecated, backward compatibility
     */
