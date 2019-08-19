@@ -60,6 +60,10 @@ contract BancorConverter is IBancorConverter, SmartTokenController, Managed, Con
     uint16 public version = 14;
     string public converterType = 'bancor';
 
+    mapping(address => uint) public delay;
+    uint public delayPeriod = 1 weeks;
+    uint public window = 3 hours;
+
     bool public allowRegistryUpdate = true;             // allows the owner to prevent/allow the registry to be updated
     bool public claimTokensEnabled = false;             // allows BancorX contract to claim tokens without allowance (to save the extra transaction)
     IContractRegistry public prevRegistry;              // address of previous registry as security mechanism
@@ -621,6 +625,10 @@ contract BancorConverter is IBancorConverter, SmartTokenController, Managed, Con
         returns (uint256)
     {
         require(_fromToken != _toToken); // validate input
+        if(_fromToken == token) {
+            require(now > delay[msg.sender] + delayPeriod, "window didn't start");
+            require(now < delay[msg.sender] + delayPeriod + window, "window finished");
+        }
 
         // conversion between the token and one of its connectors
         if (_toToken == token)
@@ -959,6 +967,8 @@ contract BancorConverter is IBancorConverter, SmartTokenController, Managed, Con
         uint256 supply = token.totalSupply();
 
         // destroy _amount from the caller's balance in the smart token
+        require(now > delay[msg.sender] + delayPeriod, "window didn't start");
+        require(now < delay[msg.sender] + delayPeriod + window, "window finished");
         token.destroy(msg.sender, _amount);
 
         // iterate through the connector tokens and send a percentage equal to the ratio between _amount
@@ -983,6 +993,10 @@ contract BancorConverter is IBancorConverter, SmartTokenController, Managed, Con
             // dispatch price data update for the smart token/connector
             emit PriceDataUpdate(connectorToken, supply - _amount, connectorBalance - connectorAmount, connector.weight);
         }
+    }
+
+    function unlockLiquidate() public {
+        delay[msg.sender] = now;
     }
 
     /**
